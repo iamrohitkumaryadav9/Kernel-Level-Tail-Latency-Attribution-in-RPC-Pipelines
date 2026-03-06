@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: latency-lab
+  labels:
+    app: pipeline
+    service: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: gateway
+  template:
+    metadata:
+      labels:
+        app: pipeline
+        service: gateway
+    spec:
+      containers:
+      - name: gateway
+        image: latency-attribution-gateway:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 50051
+        env:
+        - name: LISTEN_ADDR
+          value: ":50051"
+        - name: DOWNSTREAM_ADDR
+          value: "auth-svc:50052"
+        - name: DELAY_US
+          value: "50"
+        - name: DELAY_MODE
+          value: "busyspin"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "jaeger-svc:4317"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-svc
+  namespace: latency-lab
+spec:
+  selector:
+    service: gateway
+  ports:
+  - port: 50051
+    targetPort: 50051
+  type: ClusterIP

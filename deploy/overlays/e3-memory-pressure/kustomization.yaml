@@ -1,0 +1,45 @@
+# E3: Memory Pressure — adds stress-ng sidecar to gateway pod
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base
+
+patches:
+  # Add memory stress sidecar to gateway
+  - target:
+      kind: Deployment
+      name: gateway
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/-
+        value:
+          name: mem-stress
+          image: alexeiled/stress-ng:latest
+          args:
+            - "--vm"
+            - "1"
+            - "--vm-bytes"
+            - "256M"
+            - "--vm-hang"
+            - "0"
+            - "--timeout"
+            - "0"
+          resources:
+            limits:
+              memory: "512Mi"
+            requests:
+              memory: "256Mi"
+  # Also limit gateway memory to create real pressure
+  - target:
+      kind: Deployment
+      name: gateway
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            memory: "128Mi"
+          requests:
+            memory: "64Mi"

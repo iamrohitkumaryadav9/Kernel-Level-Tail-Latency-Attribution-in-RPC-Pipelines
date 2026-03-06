@@ -1,0 +1,50 @@
+# E6: Contention (stress-ng) + Cross-Node
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base
+  - cpu-hog.yaml
+
+patches:
+  - target:
+      kind: Deployment
+      name: gateway
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          node-role: node-a
+  - target:
+      kind: Deployment
+      name: auth
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          node-role: node-a
+  - target:
+      kind: Deployment
+      name: risk
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          node-role: node-b
+  - target:
+      kind: Deployment
+      name: marketdata
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          node-role: node-b
+  - target:
+      kind: Deployment
+      name: execution
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          node-role: node-b

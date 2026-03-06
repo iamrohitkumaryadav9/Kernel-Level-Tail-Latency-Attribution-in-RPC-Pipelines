@@ -1,0 +1,6 @@
+go1.22.0.linux-amd64.tar.gz
+data/
+.git/
+bin/
+analysis/plots/
+*.log

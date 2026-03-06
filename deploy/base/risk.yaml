@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: risk
+  namespace: latency-lab
+  labels:
+    app: pipeline
+    service: risk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: risk
+  template:
+    metadata:
+      labels:
+        app: pipeline
+        service: risk
+    spec:
+      containers:
+      - name: risk
+        image: latency-attribution-risk:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 50053
+        env:
+        - name: LISTEN_ADDR
+          value: ":50053"
+        - name: DOWNSTREAM_ADDR
+          value: "marketdata-svc:50054"
+        - name: DELAY_US
+          value: "50"
+        - name: DELAY_MODE
+          value: "busyspin"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "jaeger-svc:4317"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: risk-svc
+  namespace: latency-lab
+spec:
+  selector:
+    service: risk
+  ports:
+  - port: 50053
+    targetPort: 50053

@@ -1,0 +1,27 @@
+# CPU-hog: stress-ng with 4 CPU workers — pinned to node-a
+# Blueprint: "stress-ng --cpu 4" on same node as all services
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpu-hog
+  namespace: latency-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpu-hog
+  template:
+    metadata:
+      labels:
+        app: cpu-hog
+    spec:
+      nodeSelector:
+        node-role: node-a
+      containers:
+        - name: cpu-hog
+          image: alexeiled/stress-ng:latest
+          args:
+            - "--cpu"
+            - "4"
+            - "--timeout"
+            - "0"

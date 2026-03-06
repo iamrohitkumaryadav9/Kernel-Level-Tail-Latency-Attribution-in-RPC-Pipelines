@@ -1,0 +1,85 @@
+# E7: Full Stress — 200m CPU + stress-ng + Cross-Node (worst case)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base
+  - cpu-hog.yaml
+
+patches:
+  - target:
+      kind: Deployment
+      name: gateway
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          node-role: node-a
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "200m"
+          requests:
+            cpu: "100m"
+  - target:
+      kind: Deployment
+      name: auth
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          node-role: node-a
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "200m"
+          requests:
+            cpu: "100m"
+  - target:
+      kind: Deployment
+      name: risk
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          node-role: node-b
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "200m"
+          requests:
+            cpu: "100m"
+  - target:
+      kind: Deployment
+      name: marketdata
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          node-role: node-b
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "200m"
+          requests:
+            cpu: "100m"
+  - target:
+      kind: Deployment
+      name: execution
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          node-role: node-b
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "200m"
+          requests:
+            cpu: "100m"

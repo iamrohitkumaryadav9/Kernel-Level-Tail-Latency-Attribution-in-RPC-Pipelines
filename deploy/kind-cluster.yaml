@@ -1,0 +1,13 @@
+# 2-node kind cluster for latency experiments
+# node-a: control-plane + primary workload node
+# node-b: worker node for cross-node experiments
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: latency-lab
+nodes:
+  - role: control-plane
+    labels:
+      role: primary
+  - role: worker
+    labels:
+      role: secondary

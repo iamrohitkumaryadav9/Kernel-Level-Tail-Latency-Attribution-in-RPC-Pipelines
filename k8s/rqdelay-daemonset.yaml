@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: rqdelay
+  namespace: latency-lab
+  labels:
+    app: rqdelay
+spec:
+  selector:
+    matchLabels:
+      app: rqdelay
+  template:
+    metadata:
+      labels:
+        app: rqdelay
+    spec:
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: rqdelay
+          image: latency-attribution-rqdelay:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          ports:
+            - name: metrics
+              containerPort: 9090
+          volumeMounts:
+            - name: debugfs
+              mountPath: /sys/kernel/debug
+            - name: bpffs
+              mountPath: /sys/fs/bpf
+            - name: modules
+              mountPath: /lib/modules
+              readOnly: true
+      volumes:
+        - name: debugfs
+          hostPath:
+            path: /sys/kernel/debug
+        - name: bpffs
+          hostPath:
+            path: /sys/fs/bpf
+        - name: modules
+          hostPath:
+            path: /lib/modules

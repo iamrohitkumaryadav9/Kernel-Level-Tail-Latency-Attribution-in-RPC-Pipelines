@@ -1,0 +1,66 @@
+# E3b: CFS Throttling — Moderate (500m CPU limit)
+# Blueprint: SN / 500m / None / Pod
+# "Same mechanism as E3a but with more headroom. Validates dose-response."
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Deployment
+      name: gateway
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "500m"
+          requests:
+            cpu: "100m"
+  - target:
+      kind: Deployment
+      name: auth
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "500m"
+          requests:
+            cpu: "100m"
+  - target:
+      kind: Deployment
+      name: risk
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "500m"
+          requests:
+            cpu: "100m"
+  - target:
+      kind: Deployment
+      name: marketdata
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "500m"
+          requests:
+            cpu: "100m"
+  - target:
+      kind: Deployment
+      name: execution
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "500m"
+          requests:
+            cpu: "100m"

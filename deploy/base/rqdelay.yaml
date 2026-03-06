@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: rqdelay
+  namespace: latency-lab
+  labels:
+    app: rqdelay
+    project: latency-attribution
+spec:
+  selector:
+    matchLabels:
+      app: rqdelay
+  template:
+    metadata:
+      labels:
+        app: rqdelay
+        project: latency-attribution
+    spec:
+      hostPID: true  # Required to see PIDs in root namespace
+      containers:
+      - name: rqdelay
+        image: latency-attribution-rqdelay:latest
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true # Required for eBPF
+        volumeMounts:
+        - name: debug-fs
+          mountPath: /sys/kernel/debug
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      volumes:
+      - name: debug-fs
+        hostPath:
+          path: /sys/kernel/debug

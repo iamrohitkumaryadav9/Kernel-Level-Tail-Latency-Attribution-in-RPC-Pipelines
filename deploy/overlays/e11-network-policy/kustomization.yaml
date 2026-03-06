@@ -1,0 +1,8 @@
+# E11: Network Policy — restrict inter-service traffic to only allowed paths
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base
+  - network-policy.yaml

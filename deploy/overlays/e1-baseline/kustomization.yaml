@@ -1,0 +1,9 @@
+# E1: Baseline — floor latency measurement
+# Blueprint: SN / None / None / Pod / gRPC
+# No modifications — just deploys the base configuration
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base

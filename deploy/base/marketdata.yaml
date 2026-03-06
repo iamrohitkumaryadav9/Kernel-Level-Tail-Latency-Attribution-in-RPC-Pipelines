@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketdata
+  namespace: latency-lab
+  labels:
+    app: pipeline
+    service: marketdata
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: marketdata
+  template:
+    metadata:
+      labels:
+        app: pipeline
+        service: marketdata
+    spec:
+      containers:
+      - name: marketdata
+        image: latency-attribution-marketdata:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 50054
+        env:
+        - name: LISTEN_ADDR
+          value: ":50054"
+        - name: DOWNSTREAM_ADDR
+          value: "execution-svc:50055"
+        - name: REDIS_ADDR
+          value: "redis-svc:6379"
+        - name: DELAY_US
+          value: "50"
+        - name: DELAY_MODE
+          value: "busyspin"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "jaeger-svc:4317"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marketdata-svc
+  namespace: latency-lab
+spec:
+  selector:
+    service: marketdata
+  ports:
+  - port: 50054
+    targetPort: 50054

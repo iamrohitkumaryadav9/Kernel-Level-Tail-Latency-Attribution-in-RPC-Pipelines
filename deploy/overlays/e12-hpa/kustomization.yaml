@@ -1,0 +1,24 @@
+# E12: HPA Autoscaling — adds HorizontalPodAutoscaler for gateway
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base
+  - hpa.yaml
+
+patches:
+  # Set resource requests (required for HPA CPU-based scaling)
+  - target:
+      kind: Deployment
+      name: gateway
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "500m"
+            memory: "128Mi"
+          requests:
+            cpu: "200m"
+            memory: "64Mi"

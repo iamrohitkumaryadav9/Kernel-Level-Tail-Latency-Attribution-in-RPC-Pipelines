@@ -1,0 +1,23 @@
+# kind cluster with 2 worker nodes + static CPU manager for pinning experiments
+# reservedSystemCPUs: "0-1" keeps 2 cores for system, rest available for pinning
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: latency-lab
+nodes:
+  - role: control-plane
+  - role: worker
+    labels:
+      node-role: node-a
+    kubeadmConfigPatches:
+      - |
+        kind: KubeletConfiguration
+        cpuManagerPolicy: static
+        reservedSystemCPUs: "0-1"
+  - role: worker
+    labels:
+      node-role: node-b
+    kubeadmConfigPatches:
+      - |
+        kind: KubeletConfiguration
+        cpuManagerPolicy: static
+        reservedSystemCPUs: "0-1"

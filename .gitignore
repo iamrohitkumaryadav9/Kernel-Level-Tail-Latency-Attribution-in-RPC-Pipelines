@@ -1,0 +1,35 @@
+# Go
+bin/
+*.exe
+*.test
+*.out
+
+# Go tarballs (accidentally downloaded to project)
+go*.linux-amd64.tar.gz
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Experiment logs (large, regeneratable)
+experiments.log
+nohup.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.tar
+
+# Temporary
+/tmp/

@@ -1,0 +1,20 @@
+# stress-ng CPU hog pods for E13
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpu-hog
+  namespace: latency-lab
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cpu-hog
+  template:
+    metadata:
+      labels:
+        app: cpu-hog
+    spec:
+      containers:
+      - name: stress
+        image: alexeiled/stress-ng
+        args: ["--cpu", "4", "--timeout", "0"]

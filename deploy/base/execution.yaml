@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: execution
+  namespace: latency-lab
+  labels:
+    app: pipeline
+    service: execution
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: execution
+  template:
+    metadata:
+      labels:
+        app: pipeline
+        service: execution
+    spec:
+      containers:
+      - name: execution
+        image: latency-attribution-execution:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 50055
+        env:
+        - name: LISTEN_ADDR
+          value: ":50055"
+        - name: DELAY_US
+          value: "50"
+        - name: DELAY_MODE
+          value: "busyspin"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "jaeger-svc:4317"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: execution-svc
+  namespace: latency-lab
+spec:
+  selector:
+    service: execution
+  ports:
+  - port: 50055
+    targetPort: 50055

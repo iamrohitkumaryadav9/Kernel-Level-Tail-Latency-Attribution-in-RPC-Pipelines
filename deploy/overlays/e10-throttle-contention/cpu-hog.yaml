@@ -1,0 +1,23 @@
+# stress-ng CPU hog for E10 — single replica, 4 workers, pinned to node-a
+# Blueprint: SN / 200m / stress-ng / Pod
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpu-hog
+  namespace: latency-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpu-hog
+  template:
+    metadata:
+      labels:
+        app: cpu-hog
+    spec:
+      nodeSelector:
+        node-role: node-a
+      containers:
+      - name: stress
+        image: alexeiled/stress-ng
+        args: ["--cpu", "4", "--timeout", "0"]

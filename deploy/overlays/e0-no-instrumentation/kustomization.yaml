@@ -1,0 +1,90 @@
+# E0: Instrumentation Overhead — OTel tracing disabled
+# Compare against E1 (with tracing) to measure overhead
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Deployment
+      name: gateway
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: gateway
+      spec:
+        template:
+          spec:
+            containers:
+            - name: gateway
+              env:
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: ""
+  - target:
+      kind: Deployment
+      name: auth
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: auth
+      spec:
+        template:
+          spec:
+            containers:
+            - name: auth
+              env:
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: ""
+  - target:
+      kind: Deployment
+      name: risk
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: risk
+      spec:
+        template:
+          spec:
+            containers:
+            - name: risk
+              env:
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: ""
+  - target:
+      kind: Deployment
+      name: marketdata
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: marketdata
+      spec:
+        template:
+          spec:
+            containers:
+            - name: marketdata
+              env:
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: ""
+  - target:
+      kind: Deployment
+      name: execution
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: execution
+      spec:
+        template:
+          spec:
+            containers:
+            - name: execution
+              env:
+              - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                value: ""

@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "github.com/latency-attribution/latency-attribution/proto/orderpb";
+
+// ─── Gateway ──────────────────────────────────────
+service GatewayService {
+  rpc SubmitOrder(OrderRequest) returns (OrderResponse);
+}
+
+// ─── Auth / Validation ────────────────────────────
+service AuthService {
+  rpc ValidateOrder(OrderRequest) returns (ValidationResult);
+}
+
+// ─── Risk Check ───────────────────────────────────
+service RiskService {
+  rpc CheckRisk(OrderRequest) returns (RiskResult);
+}
+
+// ─── Market Data ──────────────────────────────────
+service MarketDataService {
+  rpc GetQuote(QuoteRequest) returns (QuoteResult);
+}
+
+// ─── Execution ────────────────────────────────────
+service ExecutionService {
+  rpc Execute(ExecRequest) returns (ExecResult);
+}
+
+// ─── Messages ─────────────────────────────────────
+
+message OrderRequest {
+  string order_id = 1;
+  string symbol   = 2;
+  int64  quantity  = 3;
+  double price     = 4;
+  bytes  payload   = 5;  // Configurable size for benchmarking
+  map<string, string> metadata = 6;
+}
+
+message OrderResponse {
+  string order_id  = 1;
+  bool   accepted  = 2;
+  string message   = 3;
+  double exec_price = 4;
+  int64  latency_ns = 5;  // End-to-end measured by gateway
+}
+
+message ValidationResult {
+  string order_id = 1;
+  bool   valid    = 2;
+  string reason   = 3;
+  // Forwarded downstream results
+  RiskResult risk_result = 4;
+}
+
+message RiskResult {
+  string order_id   = 1;
+  bool   approved   = 2;
+  double risk_score = 3;
+  // Forwarded downstream results
+  QuoteResult quote_result = 4;
+}
+
+message QuoteRequest {
+  string order_id = 1;
+  string symbol   = 2;
+}
+
+message QuoteResult {
+  string order_id   = 1;
+  string symbol     = 2;
+  double bid_price  = 3;
+  double ask_price  = 4;
+  // Forwarded downstream results
+  ExecResult exec_result = 5;
+}
+
+message ExecRequest {
+  string order_id = 1;
+  string symbol   = 2;
+  int64  quantity = 3;
+  double price    = 4;
+}
+
+message ExecResult {
+  string order_id    = 1;
+  bool   filled      = 2;
+  double fill_price  = 3;
+  int64  fill_qty    = 4;
+  string status      = 5;
+}

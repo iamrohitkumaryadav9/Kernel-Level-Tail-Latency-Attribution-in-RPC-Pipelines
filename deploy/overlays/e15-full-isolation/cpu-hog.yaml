@@ -1,0 +1,50 @@
+# stress-ng CPU hog pods for E15 — one per node
+# With static CPU manager, pinned services get exclusive cores
+# so 4 stress workers won't cause i/o timeouts anymore
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpu-hog-a
+  namespace: latency-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpu-hog
+      node-target: node-a
+  template:
+    metadata:
+      labels:
+        app: cpu-hog
+        node-target: node-a
+    spec:
+      nodeSelector:
+        node-role: node-a
+      containers:
+      - name: stress
+        image: alexeiled/stress-ng
+        args: ["--cpu", "4", "--timeout", "0"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpu-hog-b
+  namespace: latency-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpu-hog
+      node-target: node-b
+  template:
+    metadata:
+      labels:
+        app: cpu-hog
+        node-target: node-b
+    spec:
+      nodeSelector:
+        node-role: node-b
+      containers:
+      - name: stress
+        image: alexeiled/stress-ng
+        args: ["--cpu", "4", "--timeout", "0"]

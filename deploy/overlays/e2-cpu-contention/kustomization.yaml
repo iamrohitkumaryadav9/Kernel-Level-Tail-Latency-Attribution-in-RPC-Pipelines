@@ -1,0 +1,65 @@
+# E2: CPU Contention — patches service pods with tight CPU limits
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base
+
+patches:
+  # Apply CPU limit of 100m (0.1 core) to all service deployments
+  - target:
+      kind: Deployment
+      name: gateway
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "100m"
+          requests:
+            cpu: "50m"
+  - target:
+      kind: Deployment
+      name: auth
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "100m"
+          requests:
+            cpu: "50m"
+  - target:
+      kind: Deployment
+      name: risk
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "100m"
+          requests:
+            cpu: "50m"
+  - target:
+      kind: Deployment
+      name: marketdata
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "100m"
+          requests:
+            cpu: "50m"
+  - target:
+      kind: Deployment
+      name: execution
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "100m"
+          requests:
+            cpu: "50m"
