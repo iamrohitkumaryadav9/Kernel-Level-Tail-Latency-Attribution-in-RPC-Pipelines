@@ -1,0 +1,36 @@
+\begin{thebibliography}{1}
+
+\bibitem{fleming2017cfs}
+Jonathan Corbet.
+\newblock {CFS Scheduler Design}.
+\newblock {\em Linux Kernel Documentation}, 2017.
+
+\bibitem{dean2013tail}
+Jeffrey Dean and Luiz~Andr{\'e} Barroso.
+\newblock {The Tail at Scale}.
+\newblock In {\em Communications of the ACM}, volume~56, pages 74--80, 2013.
+
+\bibitem{ghz2023}
+Bo~Kaldenberg.
+\newblock {ghz: Simple gRPC Benchmarking and Load Testing Tool}, 2023.
+
+\bibitem{li2014tales}
+Jialin Li, Naveen~Kr. Sharma, Dan R.~K. Ports, and Steven~D. Gribble.
+\newblock {Tales of the Tail: Hardware, OS, and Application-level Sources of
+  Tail Latency}.
+\newblock {\em Proceedings of the ACM Symposium on Cloud Computing (SoCC)},
+  2014.
+
+\bibitem{ousterhout2019shenango}
+Amy Ousterhout, Joshua Fried, Jonathan Behrens, Adam Belay, and Hari
+  Balakrishnan.
+\newblock {Shenango: Achieving High CPU Efficiency for Latency-Sensitive
+  Datacenter Workloads}.
+\newblock In {\em USENIX NSDI}, 2019.
+
+\bibitem{starovoitov2014ebpf}
+Alexei Starovoitov.
+\newblock {Extended BPF in the Linux Kernel}.
+\newblock {\em Linux Plumbers Conference}, 2014.
+
+\end{thebibliography}

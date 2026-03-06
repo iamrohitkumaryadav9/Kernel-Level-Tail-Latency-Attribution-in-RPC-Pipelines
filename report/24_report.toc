@@ -1,0 +1,34 @@
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
+\contentsline {section}{\numberline {2}Background and Related Work}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Linux CFS and Bandwidth Throttling}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}eBPF for Kernel Observability}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Related Work}{3}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Methodology}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Testbed Architecture}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}RPC Pipeline}{4}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}eBPF Instrumentation: rqdelay}{4}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Experiment Matrix}{4}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Load Generation}{5}{subsection.3.5}%
+\contentsline {subsection}{\numberline {3.6}Hypotheses}{5}{subsection.3.6}%
+\contentsline {subsection}{\numberline {3.7}Statistical Methods}{5}{subsection.3.7}%
+\contentsline {section}{\numberline {4}Results}{6}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Baseline and eBPF Overhead (E0, E1)}{6}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}H1: CPU Contention --- CONFIRMED}{6}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}H2: CFS Throttling --- STRONGLY CONFIRMED}{7}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}H3: Mitigation Effectiveness --- PARTIALLY CONFIRMED}{8}{subsection.4.4}%
+\contentsline {paragraph}{CPU pinning (E13): Excellent.}{8}{subsection.4.4}%
+\contentsline {paragraph}{Full isolation (E15): Disappointing.}{8}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}H4: Cross-Node Amplification --- PARTIALLY CONFIRMED}{9}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}eBPF Correlation Analysis}{10}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Statistical Summary}{10}{subsection.4.7}%
+\contentsline {section}{\numberline {5}Discussion}{11}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Key Findings}{11}{subsection.5.1}%
+\contentsline {paragraph}{CFS throttling is the dominant latency source.}{11}{subsection.5.1}%
+\contentsline {paragraph}{CPU pinning is the most effective single mitigation.}{11}{subsection.5.1}%
+\contentsline {paragraph}{Mitigations are not additive.}{11}{subsection.5.1}%
+\contentsline {paragraph}{Cross-node amplification is context-dependent.}{11}{subsection.5.1}%
+\contentsline {paragraph}{Memory pressure alone has negligible effect.}{11}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Limitations}{12}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Implications for Production}{12}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Conclusions and Future Work}{12}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Future Work}{13}{subsection.6.1}%

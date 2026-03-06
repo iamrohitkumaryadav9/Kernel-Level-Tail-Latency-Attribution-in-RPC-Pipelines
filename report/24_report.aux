@@ -1,0 +1,88 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{dean2013tail}
+\citation{fleming2017cfs}
+\citation{starovoitov2014ebpf}
+\citation{dean2013tail}
+\citation{li2014tales}
+\citation{ousterhout2019shenango}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{3}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{3}{Introduction}{section.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background and Related Work}{3}{section.2}\protected@file@percent }
+\newlabel{sec:background}{{2}{3}{Background and Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Linux CFS and Bandwidth Throttling}{3}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}eBPF for Kernel Observability}{3}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Related Work}{3}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Methodology}{4}{section.3}\protected@file@percent }
+\newlabel{sec:methodology}{{3}{4}{Methodology}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Testbed Architecture}{4}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}RPC Pipeline}{4}{subsection.3.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}{\ignorespaces Pipeline flow}}{4}{lstlisting.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}eBPF Instrumentation: rqdelay}{4}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Experiment Matrix}{4}{subsection.3.4}\protected@file@percent }
+\citation{ghz2023}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Experiment matrix: 20 experiments $\times $ 3 runs = 60 total runs.}}{5}{table.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:experiments}{{1}{5}{Experiment matrix: 20 experiments $\times $ 3 runs = 60 total runs}{table.caption.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Load Generation}{5}{subsection.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Hypotheses}{5}{subsection.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Statistical Methods}{5}{subsection.3.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Results}{6}{section.4}\protected@file@percent }
+\newlabel{sec:results}{{4}{6}{Results}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Baseline and eBPF Overhead (E0, E1)}{6}{subsection.4.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Fig 1: p99 latency across all 20 experiments. Dashed line shows baseline (E1=123.6\,ms). CFS-throttled and compound experiments show 2--8$\times $ inflation. Note: ghz reports up to p99; p99.9 is not available.}}{6}{figure.caption.2}\protected@file@percent }
+\newlabel{fig:p99_bar}{{1}{6}{Fig 1: p99 latency across all 20 experiments. Dashed line shows baseline (E1=123.6\,ms). CFS-throttled and compound experiments show 2--8$\times $ inflation. Note: ghz reports up to p99; p99.9 is not available}{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}H1: CPU Contention --- CONFIRMED}{6}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:h1}{{4.2}{6}{H1: CPU Contention --- CONFIRMED}{subsection.4.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Fig 5: Contention comparison showing E4 (noisy neighbor) impact and E13 (CPU pinning) mitigation.}}{7}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:contention}{{2}{7}{Fig 5: Contention comparison showing E4 (noisy neighbor) impact and E13 (CPU pinning) mitigation}{figure.caption.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}H2: CFS Throttling --- STRONGLY CONFIRMED}{7}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:h2}{{4.3}{7}{H2: CFS Throttling --- STRONGLY CONFIRMED}{subsection.4.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces CFS throttling dose-response: monotonic relationship between CPU limit and p99 latency.}}{7}{table.caption.4}\protected@file@percent }
+\newlabel{tab:cfs_dose}{{2}{7}{CFS throttling dose-response: monotonic relationship between CPU limit and p99 latency}{table.caption.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Fig 4: CFS throttling dose-response. CPU limit tightness is monotonically related to p99 latency.}}{8}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:dose_response}{{3}{8}{Fig 4: CFS throttling dose-response. CPU limit tightness is monotonically related to p99 latency}{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Fig 3: CDF overlay of E1 (baseline), E3a (throttled), E7 (full stress), and E15 (isolated). The CDF clearly separates baseline from throttled experiments.}}{8}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:cdf_overlay}{{4}{8}{Fig 3: CDF overlay of E1 (baseline), E3a (throttled), E7 (full stress), and E15 (isolated). The CDF clearly separates baseline from throttled experiments}{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}H3: Mitigation Effectiveness --- PARTIALLY CONFIRMED}{8}{subsection.4.4}\protected@file@percent }
+\newlabel{sec:h3}{{4.4}{8}{H3: Mitigation Effectiveness --- PARTIALLY CONFIRMED}{subsection.4.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{CPU pinning (E13): Excellent.}{8}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Full isolation (E15): Disappointing.}{8}{subsection.4.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Fig 7: Mitigation waterfall from worst case (E7=819\,ms) to best case (E13=119\,ms). E15 ``full isolation'' barely improves over E7, while E13 (CPU pinning alone) achieves the best result.}}{9}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:mitigation}{{5}{9}{Fig 7: Mitigation waterfall from worst case (E7=819\,ms) to best case (E13=119\,ms). E15 ``full isolation'' barely improves over E7, while E13 (CPU pinning alone) achieves the best result}{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}H4: Cross-Node Amplification --- PARTIALLY CONFIRMED}{9}{subsection.4.5}\protected@file@percent }
+\newlabel{sec:h4}{{4.5}{9}{H4: Cross-Node Amplification --- PARTIALLY CONFIRMED}{subsection.4.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces H4: Cross-node amplification ratios.}}{9}{table.caption.8}\protected@file@percent }
+\newlabel{tab:h4}{{3}{9}{H4: Cross-node amplification ratios}{table.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Fig 6: Cross-node effect comparison. Same-node vs.\ cross-node pairs show amplification under contention but not at baseline.}}{10}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:crossnode}{{6}{10}{Fig 6: Cross-node effect comparison. Same-node vs.\ cross-node pairs show amplification under contention but not at baseline}{figure.caption.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}eBPF Correlation Analysis}{10}{subsection.4.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces eBPF correlation: (a) kernel wakeup delay (8--249\,$\mu $s) correlates with application p99 (113--1042\,ms), confirming eBPF metrics can predict application-level tail latency. (b) Softirq activity increases with wakeup delay, indicating interrupt processing contributes to scheduling contention.}}{10}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:ebpf_corr}{{7}{10}{eBPF correlation: (a) kernel wakeup delay (8--249\,$\mu $s) correlates with application p99 (113--1042\,ms), confirming eBPF metrics can predict application-level tail latency. (b) Softirq activity increases with wakeup delay, indicating interrupt processing contributes to scheduling contention}{figure.caption.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7}Statistical Summary}{10}{subsection.4.7}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Fig 10: p99 variance across experiments showing run-to-run consistency.}}{11}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:variance}{{8}{11}{Fig 10: p99 variance across experiments showing run-to-run consistency}{figure.caption.11}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{11}{section.5}\protected@file@percent }
+\newlabel{sec:discussion}{{5}{11}{Discussion}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Key Findings}{11}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{CFS throttling is the dominant latency source.}{11}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{CPU pinning is the most effective single mitigation.}{11}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Mitigations are not additive.}{11}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Cross-node amplification is context-dependent.}{11}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Memory pressure alone has negligible effect.}{11}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Limitations}{12}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Implications for Production}{12}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusions and Future Work}{12}{section.6}\protected@file@percent }
+\newlabel{sec:conclusions}{{6}{12}{Conclusions and Future Work}{section.6}{}}
+\bibstyle{plain}
+\bibdata{24_references}
+\bibcite{fleming2017cfs}{1}
+\bibcite{dean2013tail}{2}
+\bibcite{ghz2023}{3}
+\bibcite{li2014tales}{4}
+\bibcite{ousterhout2019shenango}{5}
+\bibcite{starovoitov2014ebpf}{6}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Future Work}{13}{subsection.6.1}\protected@file@percent }
+\gdef \@abspage@last{13}
