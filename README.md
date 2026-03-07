@@ -22,7 +22,7 @@ hft-loadgen (C++) ──→ Gateway → Auth → Risk → MarketData (Redis) →
          │                ↕                    ↕                       │
          │           Jaeger Tracing      eBPF rqdelay (kernel)         │
          │                                    ↕                        │
-         └─────── hft-analyzer (C++) ← Prometheus metrics ─────────┘
+         └───────   hft-analyzer (C++)  ←  Prometheus metrics ─────────┘
 ```
 
 - **5 gRPC microservices** — Go 1.24 pipeline + **C++ matching engine** (drop-in replacement)
