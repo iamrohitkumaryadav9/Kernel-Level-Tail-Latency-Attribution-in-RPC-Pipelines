@@ -1,6 +1,6 @@
 # Kernel-Level Tail Latency Attribution in RPC Pipelines
 
-A comprehensive study of tail latency causes and mitigations in Kubernetes-hosted gRPC microservice pipelines, using eBPF kernel instrumentation.
+A comprehensive study of tail latency causes and mitigations in Kubernetes-hosted gRPC microservice pipelines, using eBPF kernel instrumentation — with **HFT-grade C++ components** demonstrating low-latency systems programming.
 
 ## Overview
 
@@ -18,24 +18,32 @@ This project investigates how Linux kernel scheduling mechanisms — specificall
 ## Architecture
 
 ```
-Client → Gateway → Auth → Risk → MarketData (Redis) → Execution
-              ↕                    ↕
-         Jaeger Tracing      eBPF rqdelay (kernel)
+hft-loadgen (C++) ──→ Gateway → Auth → Risk → MarketData (Redis) → Execution (C++)
+         │                ↕                    ↕                       │
+         │           Jaeger Tracing      eBPF rqdelay (kernel)         │
+         │                                    ↕                        │
+         └─────── hft-analyzer (C++) ← Prometheus metrics ─────────┘
 ```
 
-- **5 gRPC microservices** (Go 1.24) with OpenTelemetry tracing
+- **5 gRPC microservices** — Go 1.24 pipeline + **C++ matching engine** (drop-in replacement)
 - **eBPF instrumentation** (`rqdelay`) tracking `sched_wakeup`, `sched_switch`, `softirq`, `tcp_retransmit`
-- **20 experiment configurations** via Kustomize overlays
+- **C++ load generator** (`hft-loadgen`) with RDTSC timestamping and lock-free SPSC ring buffers
+- **C++ kernel analyzer** (`hft-analyzer`) with live terminal dashboard and Spearman correlation
+- **21 experiment configurations** via Kustomize overlays (including E16: C++ execution)
 - **Statistical analysis** with Mann-Whitney U tests and Cliff's delta
 
 ## Quick Start
 
 ```bash
-# Build images
+# Build Go service images
 for svc in gateway auth risk marketdata execution; do
     docker build --build-arg SERVICE=$svc -t latency-attribution-$svc:latest .
 done
 docker build -f ebpf/Dockerfile -t latency-attribution-rqdelay:latest .
+
+# Build C++ components
+make cpp-build        # Builds hft-loadgen, hft-analyzer, hft-execution
+make cpp-test-quick   # Runs all 19 unit tests
 
 # Create Kind cluster
 kind create cluster --name latency-attribution --config deploy/kind-multinode.yaml
@@ -50,6 +58,9 @@ kubectl apply -k deploy/base/
 # Run experiments (~3 hours)
 ./loadgen/run-all-experiments.sh 2000
 
+# Or use the C++ load generator (HFT-grade)
+./cpp/build/loadgen/hft-loadgen --target localhost:50051 --rate 2000 --duration 120 --output results.json
+
 # Analyze
 python3 analysis/scripts/analyze_all.py
 python3 analysis/scripts/plot_evidence.py
@@ -61,14 +72,20 @@ See [RUN_GUIDE.md](RUN_GUIDE.md) for complete instructions.
 ## Project Structure
 
 ```
-├── blueprint/           # 10 design documents
+├── blueprint/           # 11 design documents
 ├── services/            # 5 gRPC microservices (Go)
 ├── proto/               # Protocol Buffer definitions
 ├── pkg/                 # Shared Go packages (delay, tracing)
 ├── ebpf/                # eBPF kernel instrumentation (rqdelay)
+├── cpp/                 # C++ HFT components
+│   ├── loadgen/         #   hft-loadgen: RDTSC, SPSC ring, HDR histogram
+│   ├── analyzer/        #   hft-analyzer: eBPF map consumer, live dashboard
+│   ├── matching_engine/ #   hft-execution: lock-free order book, slab allocator
+│   ├── tests/           #   GTest unit tests (19 tests)
+│   └── CMakeLists.txt   #   Top-level CMake build
 ├── deploy/
 │   ├── base/            # Core Kubernetes manifests
-│   └── overlays/        # 20 experiment configurations
+│   └── overlays/        # 21 experiment configurations
 ├── loadgen/             # Load generation scripts (ghz)
 ├── analysis/
 │   ├── scripts/         # Python analysis & plotting
@@ -80,9 +97,29 @@ See [RUN_GUIDE.md](RUN_GUIDE.md) for complete instructions.
 └── RUN_GUIDE.md         # Complete execution guide
 ```
 
+## C++ HFT Components
+
+Three C++ (C++20) components demonstrate HFT-grade systems programming:
+
+| Component | Binary | HFT Skills Demonstrated |
+|:----------|:-------|:------------------------|
+| **Load Generator** | `hft-loadgen` | RDTSC nanosecond timestamping, lock-free SPSC ring buffer, zero-allocation HDR histogram, busy-spin rate limiting |
+| **Kernel Analyzer** | `hft-analyzer` | Raw socket HTTP client (zero deps), Spearman/Pearson correlation, ANSI live dashboard with sparklines, CSV export |
+| **Matching Engine** | `hft-execution` | 64-byte cache-line aligned orders, O(1) slab memory pool, price-time priority order book, drop-in gRPC replacement |
+
+**Build & test:**
+```bash
+make cpp-build       # cmake + make
+make cpp-test-quick  # 19 unit tests (SPSC ring, HDR histogram, order book)
+make cpp-clean       # clean build
+```
+
+See [blueprint/10_cpp_hft_components.md](blueprint/10_cpp_hft_components.md) for full design rationale.
+
 ## Requirements
 
-- Go 1.24+, Docker, Kind, kubectl, ghz, Python 3.10+
+- **Go pipeline**: Go 1.24+, Docker, Kind, kubectl, ghz, Python 3.10+
+- **C++ components**: CMake 3.20+, g++ 13+ (C++20), libgrpc++-dev, protobuf-compiler-grpc, libgtest-dev, nlohmann-json3-dev
 - See [RUN_GUIDE.md](RUN_GUIDE.md) for full prerequisites
 
 ## License

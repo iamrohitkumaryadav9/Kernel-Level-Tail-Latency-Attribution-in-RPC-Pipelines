@@ -3,4 +3,5 @@ data/
 .git/
 bin/
 analysis/plots/
+cpp/build/
 *.log

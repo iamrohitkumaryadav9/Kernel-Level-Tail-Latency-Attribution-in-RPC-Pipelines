@@ -34,11 +34,12 @@
 | **E13** | SN | Pinned | None | Pod | gRPC | **Mitigation: CPU pinning** |
 | **E14** | XN | Pinned | stress-ng | Pod | gRPC | **Mitigation: pinning under stress** |
 | **E15** | XN | Tuned | stress-ng | Host+IRQ | gRPC | **Mitigation: full isolation** |
-| **E16** *(optional)* | SN | None | None | Pod | gRPC | **CPU governor: powersave vs performance** |
+| **E16** | SN | None | None | Pod | gRPC | **C++ matching engine** — drop-in replacement for Go execution via `hft-execution` |
 
 > **E13–E15** are mitigation experiments. **E0** is the instrumentation overhead
-> control. **E16** is an optional HFT-relevance experiment testing frequency
-> scaling jitter.
+> control. **E16** replaces the Go execution service with a C++ matching engine
+> (64-byte cache-line orders, slab allocator, price-time priority) to measure
+> execution path latency improvement.
 
 ## 3.3 Per-Experiment Detail Cards
 

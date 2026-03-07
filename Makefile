@@ -67,3 +67,25 @@ undeploy:
 clean:
 	rm -rf bin/ $(PROTO_OUT)/
 	@echo "✓ cleaned"
+
+# ── C++ HFT Components ────────────────────────────
+cpp-build:
+	@mkdir -p cpp/build
+	cd cpp/build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j$$(nproc)
+	@echo "✓ C++ components built → cpp/build/"
+
+cpp-test:
+	cd cpp/build && ctest --output-on-failure
+	@echo "✓ C++ tests passed"
+
+cpp-test-quick:
+	@echo "Building and running unit tests directly..."
+	g++ -std=c++20 -O2 -march=native -o /tmp/test_spsc cpp/tests/test_spsc_ring.cpp -lgtest -lgtest_main -lpthread
+	g++ -std=c++20 -O2 -march=native -o /tmp/test_hdr cpp/tests/test_hdr_histogram.cpp -lgtest -lgtest_main -lpthread
+	g++ -std=c++20 -O2 -march=native -o /tmp/test_orderbook cpp/tests/test_order_book.cpp -lgtest -lgtest_main -lpthread
+	/tmp/test_spsc && /tmp/test_hdr && /tmp/test_orderbook
+	@echo "✓ all unit tests passed"
+
+cpp-clean:
+	rm -rf cpp/build/
+	@echo "✓ C++ build cleaned"

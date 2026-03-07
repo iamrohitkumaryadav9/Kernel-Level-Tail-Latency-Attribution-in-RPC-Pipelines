@@ -1,0 +1,2 @@
+/usr/bin/ar qc liborder_proto.a CMakeFiles/order_proto.dir/proto/order.pb.cc.o CMakeFiles/order_proto.dir/proto/order.grpc.pb.cc.o
+/usr/bin/ranlib liborder_proto.a
