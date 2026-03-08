@@ -72,29 +72,45 @@ See [RUN_GUIDE.md](RUN_GUIDE.md) for complete instructions.
 ## Project Structure
 
 ```
-├── blueprint/           # 11 design documents
-├── services/            # 5 gRPC microservices (Go)
-├── proto/               # Protocol Buffer definitions
-├── pkg/                 # Shared Go packages (delay, tracing)
-├── ebpf/                # eBPF kernel instrumentation (rqdelay)
-├── cpp/                 # C++ HFT components
-│   ├── loadgen/         #   hft-loadgen: RDTSC, SPSC ring, HDR histogram
-│   ├── analyzer/        #   hft-analyzer: eBPF map consumer, live dashboard
-│   ├── matching_engine/ #   hft-execution: lock-free order book, slab allocator
-│   ├── tests/           #   GTest unit tests (19 tests)
-│   └── CMakeLists.txt   #   Top-level CMake build
+├── blueprint/             # 11 design documents
+├── services/              # 5 gRPC microservices (Go)
+├── proto/                 # Protocol Buffer definitions
+├── pkg/                   # Shared Go packages (delay, tracing)
+├── ebpf/                  # eBPF kernel instrumentation (rqdelay)
+│   └── bpftrace/          # Rapid-prototyping bpftrace scripts (5 scripts)
+├── cpp/                   # C++ HFT components
+│   ├── loadgen/           #   hft-loadgen: RDTSC, SPSC ring, HDR histogram
+│   ├── analyzer/          #   hft-analyzer: eBPF map consumer, live dashboard
+│   ├── matching_engine/   #   hft-execution: lock-free order book, slab allocator
+│   ├── tests/             #   GTest unit tests (19 tests)
+│   └── CMakeLists.txt     #   Top-level CMake build
 ├── deploy/
-│   ├── base/            # Core Kubernetes manifests
-│   └── overlays/        # 21 experiment configurations
-├── loadgen/             # Load generation scripts (ghz)
+│   ├── base/              # Core Kubernetes manifests
+│   └── overlays/          # 24 experiment configurations (E0-E16 + extras + mitigations)
+├── loadgen/               # Load generation scripts (ghz)
 ├── analysis/
-│   ├── scripts/         # Python analysis & plotting
-│   ├── plots/           # Generated figures (20 plots)
-│   └── stats/           # Statistical test results
-├── data/                # Experiment results (JSON + CSV)
-├── docs/                # Additional documentation
-├── FINDINGS.md          # Hypothesis verification results
-└── RUN_GUIDE.md         # Complete execution guide
+│   ├── scripts/           # 16 Python analysis & plotting scripts
+│   │   ├── analyze_all.py               # Parse + validate + CSV
+│   │   ├── statistical_analysis.py      # Mann-Whitney U + hypothesis eval
+│   │   ├── per_request_correlation.py   # Per-request kernel signal correlation (§06.4)
+│   │   ├── spike_detection.py           # Sliding-window spike/calm classifier (§06.3)
+│   │   ├── chi_squared_throttle.py      # Chi-squared throttle × spike test (§06.5)
+│   │   ├── per_signal_mannwhitney.py    # Per-signal case/control attribution (§06.4)
+│   │   ├── case_control_analysis.py     # Case/control request split (§06.4)
+│   │   ├── windowed_correlation.py      # 100ms windowed correlation (§06.2)
+│   │   ├── collect_kernel_metrics.py    # Real /proc + derived kernel metrics
+│   │   ├── add_plot_watermarks.py       # Data source watermarks on plots
+│   │   ├── plot_evidence.py             # Core 10-figure evidence suite
+│   │   ├── plot_results.py              # Basic 3-plot summary
+│   │   └── ...                          # Burst, Jaeger, eBPF plots
+│   ├── notebooks/         # 3 Jupyter notebooks for interactive analysis
+│   ├── plots/             # Generated figures (25+ plots)
+│   └── stats/             # Statistical test results (10+ CSV files)
+├── data/                  # Experiment results (JSON + CSV)
+│   ├── kernel_metrics_source.csv        # Kernel signal provenance chain
+│   └── ebpf_per_experiment.csv          # Per-experiment kernel metrics
+├── FINDINGS.md            # Hypothesis verification + limitations
+└── RUN_GUIDE.md           # Complete execution guide
 ```
 
 ## C++ HFT Components

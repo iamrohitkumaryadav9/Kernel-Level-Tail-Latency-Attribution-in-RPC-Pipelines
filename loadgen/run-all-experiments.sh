@@ -60,10 +60,10 @@ for exp in "${EXPERIMENTS[@]}"; do
         FAILED+=("$exp")
     fi
 
-    # Cool down between experiments
+    # Cool down between experiments (match run-experiment.sh 60s cooldown)
     if [ "$COMPLETED" -lt "$TOTAL" ]; then
-        echo "  Cooling down 15s before next experiment..."
-        sleep 15
+        echo "  Cooling down 60s before next experiment..."
+        sleep 60
     fi
 done
 

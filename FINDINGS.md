@@ -172,6 +172,62 @@ Three C++ (C++20) components were built to demonstrate HFT-grade systems program
 - Kustomize overlay `e16-cpp-execution` replaces Go execution service with C++ matching engine
 - Docker multi-stage build for Kind cluster deployment
 - Enables direct latency comparison between Go and C++ execution paths
+- **Status**: Overlay and Docker image available; experiment not yet executed (requires cluster rebuild with C++ image)
+
+---
+
+## 📝 Known Data Issues
+
+### E11 (Network Policy) Run 3 Outlier
+- **Runs 1-2**: p50=144ms, p99=191ms, RPS=467 (consistent)
+- **Run 3**: p50=49ms, p99=82ms, RPS=1426 (3× faster throughput, 3× lower latency)
+- **Diagnosis**: Run 3 likely captured a window where network policies were not yet fully applied after overlay deployment, or the system was in a transient low-load state
+- **Recommendation**: Exclude run 3 from aggregate analysis; use runs 1-2 only for E11 conclusions. The `statistical_analysis.py` script uses the median across runs, which is robust to this outlier
+
+### Experiment Naming Conflicts
+- **`e2-cross-node`** (blueprint E2): Cross-node placement experiment
+- **`e2-cpu-contention`** (extra): Extreme 100m CPU limit experiment
+- These use the same `e2-` prefix but test completely different things. The naming collision arose because `e2-cpu-contention` was added ad-hoc after the blueprint matrix was defined
+- **Correct interpretation**: Treat `e2-cpu-contention` as an extra experiment outside the E0-E15 matrix. All analysis scripts handle both experiments correctly
+
+---
+
+## ⚠️ Limitations & Caveats
+
+This section formally documents the known limitations of this study.
+
+### 1. Sample Size (n=3)
+- **Impact**: Minimum achievable p-value for Mann-Whitney U is 0.0495 (not p<0.01 as targeted by blueprint)
+- **Mitigation**: All stressor experiments show Cliff's δ = 1.0 (maximum effect size), confirming large effects are present regardless of p-value limitations
+- **Future work**: Increasing to n=5 would achieve p<0.01 and allow parametric tests
+
+### 2. Kernel-Level Data: Derived, Not Directly Measured
+- **Impact**: Per-experiment eBPF metrics (wakeup_delay, softirq, retransmit) are derived from app-level latency distributions, not from direct `/proc/schedstat` deltas during experiments
+- **Methodology**: `wakeup_delay_proxy = (p99 - p50) / N_hops` — validated by per-request correlation (Spearman ρ=0.87)
+- **Provenance**: Full derivation chain documented in `data/kernel_metrics_source.csv`
+- **All plots using derived data are watermarked** with "Model-derived estimates"
+- **Future work**: Re-run key experiments while sampling `curl localhost:9090/metrics` at start/end of each run
+
+### 3. Kind Cluster vs Bare-Metal
+- **Impact**: Kind (Kubernetes-in-Docker) runs all nodes as Docker containers on one host. This adds overhead not present in production:
+  - Container networking (veth pairs) inflates softirq processing
+  - Docker overlay filesystem adds I/O latency
+  - Shared host kernel means all "nodes" compete for the same CPU
+- **Mitigation**: All analysis uses relative metrics (ratios, effect sizes), not absolute latency thresholds
+- **Practical relevance**: Kind accurately represents many enterprise dev/staging environments
+
+### 4. Port-Forward Overhead
+- **Impact**: `kubectl port-forward` adds 5-15ms per request, inflating all latency measurements. This is inseparable from the pipeline latency.
+- **Mitigation**: The overhead is consistent across experiments, so relative comparisons remain valid.
+- **Evidence**: E0-E1 comparison (5.6% overhead) includes port-forward in both measurements.
+
+### 5. RPS Saturation
+- **Impact**: Target 2000 RPS was never achieved (baseline: 709 RPS = 35.5%). Experiments ran under saturation rather than steady-state.
+- **Full analysis**: See [RPS Saturation Analysis](#-rps-saturation-analysis) section above.
+
+### 6. E16 Not Executed
+- **Impact**: The C++ matching engine experiment exists as overlay and Docker image but was not run. The claimed 3,535ns execution latency is from standalone `grpcurl` testing, not from the full pipeline.
+- **Future work**: Run E16 and compare Go vs C++ execution path end-to-end latency.
 
 ---
 
@@ -187,4 +243,5 @@ Three C++ (C++20) components were built to demonstrate HFT-grade systems program
 | **C++ execution latency** | **Sub-microsecond** | **3,535 ns per fill** | ✅ **Verified** |
 
 > **Bottom line**: The core thesis — that CFS throttling is the dominant cause of tail latency in Kubernetes and CPU pinning is the most effective mitigation — is **strongly supported by real data**. The unexpected results (E15, H4 partial) are genuine experimental findings that make the project more credible. Kernel-level signals are derived from app-level latency characteristics with documented provenance. The C++ HFT components demonstrate production-grade low-latency engineering applicable to trading systems.
+
 

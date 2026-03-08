@@ -498,6 +498,14 @@ All plots saved to `analysis/plots/`:
 | `fig9_retransmit_vs_p99.png` | Fig 9: TCP retransmit vs p99 | `plot_ebpf_correlation.py` |
 | `fig10b_per_hop_decomposition.png` | Fig 10: Per-hop stacked bar | `plot_jaeger_hops.py` |
 | `fig10c_per_hop_cdf.png` | Fig 10c: Per-service CDF | `plot_jaeger_hops.py` |
+| `fig_per_request_correlation.png` | Per-request kernel signal scatter | `per_request_correlation.py` |
+| `fig_per_request_heatmap.png` | Per-request Spearman ρ heatmap | `per_request_correlation.py` |
+| `fig_spike_detection.png` | Sliding-window spike detection | `spike_detection.py` |
+| `fig_spike_summary.png` | Spike percentage summary | `spike_detection.py` |
+| `fig_chi_squared_throttle.png` | Throttle × spike independence | `chi_squared_throttle.py` |
+| `fig_per_signal_heatmap.png` | Per-signal Mann-Whitney heatmap | `per_signal_mannwhitney.py` |
+| `fig_case_control_latency.png` | Case/control latency distributions | `case_control_analysis.py` |
+| `fig_windowed_correlation.png` | 100ms windowed Spearman ρ | `windowed_correlation.py` |
 
 ### 7.5 View Plots
 
@@ -525,6 +533,63 @@ CFS_PID=$!
 kill $CFS_PID
 echo "Lines: $(wc -l < data/e3a-cfs-tight/cfs-stats.csv)"
 ```
+
+### 7.7 Advanced Analysis Scripts (Blueprint §06)
+
+After the core analysis (Steps 1-5), run these additional scripts for deeper analysis:
+
+```bash
+# Per-request kernel signal correlation (§06.4)
+# Correlates individual requests with 6 concurrent kernel signals in 100ms windows
+python3 analysis/scripts/per_request_correlation.py
+
+# Spike detection with sliding-window p999 (§06.3)
+python3 analysis/scripts/spike_detection.py
+
+# Chi-squared test for throttle × spike association (§06.5)
+python3 analysis/scripts/chi_squared_throttle.py
+
+# Per-signal case/control Mann-Whitney attribution (§06.4)
+python3 analysis/scripts/per_signal_mannwhitney.py
+
+# Case/control request analysis (>p99 vs median groups) (§06.4)
+python3 analysis/scripts/case_control_analysis.py
+
+# 100ms windowed Spearman/Pearson correlation (§06.2)
+python3 analysis/scripts/windowed_correlation.py
+
+# Collect real /proc kernel metrics + derive per-experiment signals
+python3 analysis/scripts/collect_kernel_metrics.py
+
+# Add data source watermarks to all plots (requires Pillow)
+pip3 install Pillow
+python3 analysis/scripts/add_plot_watermarks.py
+```
+
+**Output files:**
+- `analysis/stats/per_request_correlation.csv` — Spearman ρ per experiment × signal
+- `analysis/stats/spike_detection.csv` — per-window spike/calm classification
+- `analysis/stats/chi_squared_throttle.csv` — chi-squared test results
+- `analysis/stats/per_signal_mannwhitney.csv` — per-signal effect sizes
+- `analysis/stats/case_control_results.csv` — case/control ratios
+- `analysis/stats/windowed_correlation.csv` — 100ms windowed correlation
+- `data/kernel_metrics_source.csv` — full kernel signal provenance chain
+
+### 7.8 Interactive Jupyter Notebooks
+
+Three notebooks are available for interactive exploration:
+
+```bash
+pip3 install jupyter
+cd analysis/notebooks/
+jupyter notebook
+```
+
+| Notebook | Purpose |
+|---|---|
+| `01_experiment_explorer.ipynb` | CDF comparison, percentile tables, per-experiment deep dive |
+| `02_correlation_analysis.ipynb` | Windowed data explorer, spike detection, case/control |
+| `03_mitigation_report.ipynb` | Mitigation waterfall, before/after CDF, signal attribution |
 
 ---
 
