@@ -1,0 +1,65 @@
+#!/usr/bin/env bpftrace
+/*
+ * tcp_retransmit.bt — Track TCP retransmission events
+ *
+ * Blueprint Reference: §05 eBPF Instrumentation, H3 Validation
+ *
+ * Monitors TCP retransmissions which contribute to tail latency in
+ * cross-node RPC scenarios. Each retransmit adds ~RTT + RTO to the
+ * request latency.
+ *
+ * Usage:
+ *   sudo bpftrace tcp_retransmit.bt
+ *
+ * Output: Retransmit events with source/dest, plus histograms.
+ */
+
+tracepoint:tcp:tcp_retransmit_skb
+{
+    $saddr = ntop(args->saddr);
+    $daddr = ntop(args->daddr);
+    $sport = args->sport;
+    $dport = args->dport;
+    $state = args->state;
+
+    @retransmits = count();
+    @retrans_by_port[$dport] = count();
+    @retrans_by_dest[$daddr] = count();
+
+    // Print for gRPC default port (50051) and common service ports
+    if ($dport == 50051 || $dport == 50052 || $dport == 50053 ||
+        $dport == 50054 || $dport == 50055) {
+        printf("RETRANSMIT: %s:%d -> %s:%d state=%d\n",
+               $saddr, $sport, $daddr, $dport, $state);
+    }
+}
+
+// Track TCP connection resets (may indicate severe issues)
+tracepoint:tcp:tcp_receive_reset
+{
+    @tcp_resets = count();
+    printf("TCP RESET: sport=%d dport=%d\n", args->sport, args->dport);
+}
+
+// Track SYN retransmit for connection establishment latency
+tracepoint:tcp:tcp_retransmit_synack
+{
+    @synack_retrans = count();
+}
+
+interval:s:5
+{
+    printf("\n=== TCP Retransmit Report (5s) ===\n");
+    printf("Total retransmits: %d\n", @retransmits);
+    printf("SYN/ACK retransmits: %d\n", @synack_retrans);
+    printf("TCP resets: %d\n", @tcp_resets);
+    printf("\nRetransmits by destination port:\n");
+    print(@retrans_by_port);
+}
+
+END
+{
+    printf("\n=== Final TCP Summary ===\n");
+    printf("Total retransmits: %d\n", @retransmits);
+    print(@retrans_by_dest);
+}

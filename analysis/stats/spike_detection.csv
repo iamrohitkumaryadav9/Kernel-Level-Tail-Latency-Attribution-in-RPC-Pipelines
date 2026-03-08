@@ -1,0 +1,10 @@
+experiment,n_windows,n_spike,n_calm,n_intermediate,spike_pct,spike_threshold_ms,calm_threshold_ms,n_spike_bursts,mean_burst_duration_s,max_burst_duration_s,mean_inter_spike_s,spike_p999_mean_ms,calm_p999_mean_ms
+e1-baseline,1198,0,1188,10,0.0,350.94,210.57,0,0,0,0,0,0
+e3a-cfs-tight,1197,1190,0,7,99.4,350.94,210.57,4,29.65,54.3,0.267,488.38,0.0
+e3b-cfs-moderate,1198,0,690,508,0.0,350.94,210.57,0,0,0,0,0,0
+e4-noisy-neighbor,1197,0,404,793,0.0,350.94,210.57,0,0,0,0,0,0
+e5-throttle-crossnode,1197,1194,1,2,99.7,350.94,210.57,1,119.3,119.3,0,814.58,193.95
+e7-full-stress,1193,1193,0,0,100.0,350.94,210.57,1,119.2,119.2,0,703.6,0.0
+e10-throttle-contention,1198,1195,2,1,99.7,350.94,210.57,1,119.4,119.4,0,549.74,89.59
+e13-cpu-pinning,1198,0,1198,0,0.0,350.94,210.57,0,0,0,0,0,0
+e15-full-isolation,1197,1124,1,72,93.9,350.94,210.57,14,7.929,26.7,0.638,532.36,197.27

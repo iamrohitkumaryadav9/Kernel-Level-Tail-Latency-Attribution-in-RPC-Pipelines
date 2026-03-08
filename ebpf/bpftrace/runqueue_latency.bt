@@ -1,0 +1,68 @@
+#!/usr/bin/env bpftrace
+/*
+ * runqueue_latency.bt — Measure CPU runqueue (wakeup-to-run) latency
+ *
+ * Blueprint Reference: §05 eBPF Instrumentation, H1 Validation
+ *
+ * This is the rapid-prototyping bpftrace equivalent of the production
+ * CO-RE rqdelay tool. It traces the time between a thread being woken up
+ * (sched_wakeup) and starting to run (sched_switch), which is the
+ * scheduling delay that drives tail latency.
+ *
+ * Usage:
+ *   sudo bpftrace runqueue_latency.bt
+ *   sudo bpftrace runqueue_latency.bt -c 'comm=gateway*'  # filter by process
+ *
+ * Output: Histogram of wakeup-to-run delay in microseconds.
+ */
+
+tracepoint:sched:sched_wakeup
+{
+    @qtime[args->pid] = nsecs;
+}
+
+tracepoint:sched:sched_wakeup_new
+{
+    @qtime[args->pid] = nsecs;
+}
+
+tracepoint:sched:sched_switch
+{
+    $prev_pid = args->prev_pid;
+    $next_pid = args->next_pid;
+
+    if (@qtime[$next_pid]) {
+        $delta_us = (nsecs - @qtime[$next_pid]) / 1000;
+
+        @runqueue_lat_us = hist($delta_us);
+        @runqueue_by_comm[comm] = hist($delta_us);
+
+        // Track p99-relevant long delays (>100µs)
+        if ($delta_us > 100) {
+            @long_delays = count();
+            @long_by_comm[comm] = count();
+        }
+
+        // Track extreme delays (>1ms — likely CFS throttled)
+        if ($delta_us > 1000) {
+            @extreme_delays = count();
+            printf("EXTREME rqdelay: pid=%d comm=%s delay=%d µs\n",
+                   $next_pid, comm, $delta_us);
+        }
+
+        delete(@qtime[$next_pid]);
+    }
+}
+
+interval:s:5
+{
+    printf("\n--- Runqueue Latency (5s snapshot) ---\n");
+    print(@runqueue_lat_us);
+    printf("Long delays (>100µs): %d\n", @long_delays);
+    printf("Extreme delays (>1ms): %d\n", @extreme_delays);
+}
+
+END
+{
+    clear(@qtime);
+}

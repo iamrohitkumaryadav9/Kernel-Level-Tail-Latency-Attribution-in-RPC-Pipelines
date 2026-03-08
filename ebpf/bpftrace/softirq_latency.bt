@@ -1,0 +1,88 @@
+#!/usr/bin/env bpftrace
+/*
+ * softirq_latency.bt — Track NET_RX softirq processing time and frequency
+ *
+ * Blueprint Reference: §05 eBPF Instrumentation, H2 Validation
+ *
+ * Measures how long the kernel spends in softirq handlers (especially
+ * NET_RX = vector 3) and how often ksoftirqd is activated. High softirq
+ * time on the same CPU as the application thread delays scheduling.
+ *
+ * Usage:
+ *   sudo bpftrace softirq_latency.bt
+ *
+ * Output: Per-vector softirq duration histogram + ksoftirqd activation count.
+ */
+
+// Softirq vector names
+BEGIN
+{
+    @vec[0] = "HI";
+    @vec[1] = "TIMER";
+    @vec[2] = "NET_TX";
+    @vec[3] = "NET_RX";
+    @vec[4] = "BLOCK";
+    @vec[5] = "IRQ_POLL";
+    @vec[6] = "TASKLET";
+    @vec[7] = "SCHED";
+    @vec[8] = "HRTIMER";
+    @vec[9] = "RCU";
+}
+
+tracepoint:irq:softirq_entry
+{
+    @softirq_start[tid, args->vec] = nsecs;
+}
+
+tracepoint:irq:softirq_exit
+{
+    $key = @softirq_start[tid, args->vec];
+    if ($key) {
+        $delta_us = (nsecs - $key) / 1000;
+
+        @softirq_duration_us[args->vec] = hist($delta_us);
+        @softirq_total_us[args->vec] = sum($delta_us);
+        @softirq_count[args->vec] = count();
+
+        // NET_RX (vector 3) is the primary concern for gRPC latency
+        if (args->vec == 3) {
+            @net_rx_lat = hist($delta_us);
+            @net_rx_total = sum($delta_us);
+
+            // Track heavy NET_RX processing (>50µs)
+            if ($delta_us > 50) {
+                @net_rx_heavy = count();
+            }
+        }
+
+        delete(@softirq_start[tid, args->vec]);
+    }
+}
+
+// Track ksoftirqd activations (thread-deferred softirq)
+tracepoint:sched:sched_switch
+{
+    if (comm == "ksoftirqd*") {
+        @ksoftirqd_activations = count();
+        @ksoftirqd_per_cpu[cpu] = count();
+    }
+}
+
+interval:s:5
+{
+    printf("\n=== Softirq Report (5s) ===\n");
+    printf("NET_RX softirq duration (µs):\n");
+    print(@net_rx_lat);
+    printf("NET_RX heavy invocations (>50µs): %d\n", @net_rx_heavy);
+    printf("ksoftirqd activations: %d\n", @ksoftirqd_activations);
+    printf("\nPer-vector totals (µs):\n");
+    print(@softirq_total_us);
+    printf("\nPer-vector counts:\n");
+    print(@softirq_count);
+}
+
+END
+{
+    clear(@softirq_start);
+    clear(@vec);
+}

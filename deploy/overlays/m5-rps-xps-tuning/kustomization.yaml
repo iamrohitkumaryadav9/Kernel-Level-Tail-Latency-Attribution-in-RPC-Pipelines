@@ -1,0 +1,61 @@
+# M5: RPS/XPS Tuning — Blueprint §08
+# Distributes softirq processing across CPUs using Receive/Transmit Packet Steering
+# Requires privileged init container to configure /sys and /proc settings
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base
+
+patches:
+  # Add RPS/XPS tuning init container to all services
+  - target:
+      kind: Deployment
+      name: gateway
+    patch: &rps-patch |
+      - op: add
+        path: /spec/template/spec/initContainers
+        value:
+          - name: rps-xps-tuner
+            image: busybox:1.36
+            securityContext:
+              privileged: true
+            command:
+              - sh
+              - -c
+              - |
+                # Enable Receive Packet Steering — distribute NET_RX softirq across CPUs
+                for rxq in /sys/class/net/eth0/queues/rx-*/rps_cpus; do
+                  echo "ff" > "$rxq" 2>/dev/null || true
+                done
+                # RPS flow table entries
+                echo 4096 > /proc/sys/net/core/rps_sock_flow_entries 2>/dev/null || true
+                for rxq in /sys/class/net/eth0/queues/rx-*/rps_flow_cnt; do
+                  echo 2048 > "$rxq" 2>/dev/null || true
+                done
+                # Enable Transmit Packet Steering
+                for txq in /sys/class/net/eth0/queues/tx-*/xps_cpus; do
+                  echo "ff" > "$txq" 2>/dev/null || true
+                done
+                echo "✓ RPS/XPS tuning applied"
+
+  - target:
+      kind: Deployment
+      name: auth
+    patch: *rps-patch
+
+  - target:
+      kind: Deployment
+      name: risk
+    patch: *rps-patch
+
+  - target:
+      kind: Deployment
+      name: marketdata
+    patch: *rps-patch
+
+  - target:
+      kind: Deployment
+      name: execution
+    patch: *rps-patch

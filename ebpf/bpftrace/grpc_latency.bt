@@ -1,0 +1,98 @@
+#!/usr/bin/env bpftrace
+/*
+ * grpc_latency.bt — End-to-end gRPC request latency from kernel perspective
+ *
+ * Blueprint Reference: §05 eBPF Instrumentation, §04 Measurement Plan
+ *
+ * Combines scheduling, network, and syscall tracing to attribute where time
+ * is spent during a gRPC request lifecycle. This provides kernel-side
+ * instrumentation complementary to app-level ghz measurements.
+ *
+ * Usage:
+ *   sudo bpftrace grpc_latency.bt
+ *
+ * Note: This traces epoll_wait and read/write syscalls commonly used by
+ * gRPC (Go net/http2 and C++ gRPC). Filter by TGID if needed.
+ */
+
+// Track epoll_wait exits (thread wakeup for new work)
+tracepoint:syscalls:sys_exit_epoll_wait
+{
+    @epoll_wake[tid] = nsecs;
+}
+
+// Track read() latency on sockets (gRPC request receive)
+tracepoint:syscalls:sys_enter_read
+{
+    @read_start[tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_read
+/args->ret > 0/
+{
+    if (@read_start[tid]) {
+        $dur_us = (nsecs - @read_start[tid]) / 1000;
+        @read_lat_us = hist($dur_us);
+
+        if ($dur_us > 500) {
+            @slow_reads = count();
+        }
+        delete(@read_start[tid]);
+    }
+}
+
+// Track write() latency on sockets (gRPC response send)
+tracepoint:syscalls:sys_enter_write
+{
+    @write_start[tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_write
+/args->ret > 0/
+{
+    if (@write_start[tid]) {
+        $dur_us = (nsecs - @write_start[tid]) / 1000;
+        @write_lat_us = hist($dur_us);
+
+        if ($dur_us > 500) {
+            @slow_writes = count();
+        }
+        delete(@write_start[tid]);
+    }
+}
+
+// Track nanosleep (goroutine parking via futex)
+tracepoint:syscalls:sys_enter_futex
+{
+    @futex_start[tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_futex
+{
+    if (@futex_start[tid]) {
+        $dur_us = (nsecs - @futex_start[tid]) / 1000;
+        @futex_lat_us = hist($dur_us);
+        delete(@futex_start[tid]);
+    }
+}
+
+interval:s:10
+{
+    printf("\n=== gRPC Kernel Latency (10s) ===\n");
+    printf("\nSocket read() latency (µs):\n");
+    print(@read_lat_us);
+    printf("Slow reads (>500µs): %d\n", @slow_reads);
+    printf("\nSocket write() latency (µs):\n");
+    print(@write_lat_us);
+    printf("Slow writes (>500µs): %d\n", @slow_writes);
+    printf("\nFutex wait latency (µs) — goroutine park/unpark:\n");
+    print(@futex_lat_us);
+}
+
+END
+{
+    clear(@read_start);
+    clear(@write_start);
+    clear(@futex_start);
+    clear(@epoll_wake);
+}

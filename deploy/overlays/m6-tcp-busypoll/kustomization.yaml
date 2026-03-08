@@ -1,0 +1,64 @@
+# M6: TCP busy_poll / busy_read — Blueprint §08
+# Enables kernel-level busy polling to eliminate wakeup delay for packet processing
+# Trades CPU utilization for lower latency (HFT-style optimization)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: latency-lab
+
+resources:
+  - ../../base
+
+patches:
+  # Add sysctl tuning init container + pod-level sysctl settings
+  - target:
+      kind: Deployment
+      name: gateway
+    patch: &busypoll-patch |
+      - op: add
+        path: /spec/template/spec/initContainers
+        value:
+          - name: busy-poll-tuner
+            image: busybox:1.36
+            securityContext:
+              privileged: true
+            command:
+              - sh
+              - -c
+              - |
+                # Enable busy polling — spin-wait for packets instead of sleeping
+                # Eliminates wakeup delay at the cost of higher CPU utilization
+                sysctl -w net.core.busy_read=50 2>/dev/null || true     # 50 µs busy-read
+                sysctl -w net.core.busy_poll=50 2>/dev/null || true     # 50 µs busy-poll
+                # Enable NAPI busy polling
+                sysctl -w net.core.dev_weight=64 2>/dev/null || true
+                echo "✓ TCP busy_poll/busy_read tuning applied (50µs)"
+      # Set guaranteed QoS for stable busy-polling performance
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            cpu: "1"
+            memory: "128Mi"
+          requests:
+            cpu: "1"
+            memory: "128Mi"
+
+  - target:
+      kind: Deployment
+      name: auth
+    patch: *busypoll-patch
+
+  - target:
+      kind: Deployment
+      name: risk
+    patch: *busypoll-patch
+
+  - target:
+      kind: Deployment
+      name: marketdata
+    patch: *busypoll-patch
+
+  - target:
+      kind: Deployment
+      name: execution
+    patch: *busypoll-patch

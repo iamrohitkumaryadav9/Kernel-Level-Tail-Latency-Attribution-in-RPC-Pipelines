@@ -1,0 +1,63 @@
+#!/usr/bin/env bpftrace
+/*
+ * cfs_throttle.bt — Monitor CFS bandwidth throttling events
+ *
+ * Blueprint Reference: §05 eBPF Instrumentation, §03 Experiment E3/E10
+ *
+ * Detects when a cgroup is throttled by CFS bandwidth control and measures
+ * how long it stays throttled. This directly causes scheduling delays when
+ * cpu.cfs_quota_us is exhausted within a cpu.cfs_period_us window.
+ *
+ * Usage:
+ *   sudo bpftrace cfs_throttle.bt
+ *
+ * Output: Throttle events, duration, and per-cgroup breakdown.
+ */
+
+// Track throttle_cfs_rq events (cgroup CFS bandwidth throttle)
+kprobe:throttle_cfs_rq
+{
+    @throttle_start[tid] = nsecs;
+    @throttle_count = count();
+    @throttle_by_cpu[cpu] = count();
+    printf("THROTTLE: pid=%d comm=%s cpu=%d\n", pid, comm, cpu);
+}
+
+kprobe:unthrottle_cfs_rq
+{
+    if (@throttle_start[tid]) {
+        $dur_us = (nsecs - @throttle_start[tid]) / 1000;
+        @throttle_duration_us = hist($dur_us);
+        @throttle_total_us = sum($dur_us);
+
+        if ($dur_us > 1000) {
+            printf("LONG UNTHROTTLE: pid=%d dur=%dµs comm=%s\n", pid, $dur_us, comm);
+        }
+        delete(@throttle_start[tid]);
+    }
+    @unthrottle_count = count();
+}
+
+// Also monitor cpu.stat reads for throttled_usec changes
+tracepoint:cgroup:cgroup_attach_task
+{
+    printf("CGROUP ATTACH: pid=%d comm=%s dst=%s\n",
+           args->pid, comm, str(args->dst_path));
+}
+
+interval:s:5
+{
+    printf("\n=== CFS Throttle Report (5s) ===\n");
+    printf("Throttle events: %d\n", @throttle_count);
+    printf("Unthrottle events: %d\n", @unthrottle_count);
+    printf("Throttle duration (µs):\n");
+    print(@throttle_duration_us);
+    printf("Total throttle time (µs): %d\n", @throttle_total_us);
+    printf("\nPer-CPU throttle count:\n");
+    print(@throttle_by_cpu);
+}
+
+END
+{
+    clear(@throttle_start);
+}
