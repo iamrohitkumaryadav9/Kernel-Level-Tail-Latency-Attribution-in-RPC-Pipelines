@@ -10,10 +10,10 @@ This project investigates how Linux kernel scheduling mechanisms — specificall
 
 | Hypothesis | Result | Evidence |
 |:-----------|:-------|:---------|
-| H1: CPU contention increases p99 | ✅ Confirmed | 1.75× baseline |
-| H2: CFS throttling is dominant | ✅ **Strongly confirmed** | 4.1× with dose-response |
-| H3: CPU pinning mitigates latency | ✅ Confirmed | -85% reduction |
-| H4: Cross-node amplifies latency | ⚠️ Partial (2/4 pairs) | 3.14× for contention |
+| H1: CPU contention increases p99 | ✅ Confirmed | 2.1× baseline (118ms) |
+| H2: CFS throttling is dominant | ✅ **Strongly confirmed** | 5.3× with dose-response |
+| H3: CPU pinning mitigates latency | ✅ Confirmed | -80% reduction (65ms) |
+| H4: Cross-node amplifies latency | ⚠️ Partial (1/4 pairs) | 2.75× for contention |
 
 ## Architecture
 

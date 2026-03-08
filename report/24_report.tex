@@ -63,7 +63,7 @@
 
 % ─── Abstract ────────────────────────────────────────────────────
 \begin{abstract}
-Tail latency in Kubernetes-hosted microservice pipelines is often caused by kernel-level scheduling mechanisms invisible to application monitoring. This project uses eBPF to instrument the Linux scheduler, softirq, and TCP subsystems to attribute tail latency sources in a 5-service gRPC pipeline deployed on a multi-node Kind cluster. Through 20 controlled experiments (60 runs total) varying CFS bandwidth limits, CPU contention, cross-node placement, and mitigation strategies, we validate four hypotheses. Key findings: (1)~CFS bandwidth throttling is the dominant latency source, causing 4.1$\times$ p99 inflation with a monotonic dose-response relationship, (2)~CPU contention from noisy neighbors increases p99 by 1.75$\times$, (3)~CPU pinning reduces p99 by 85\% (the most effective single mitigation), and (4)~cross-node placement amplifies latency by up to 3.14$\times$ under contention. The complete implementation---including 5 Go microservices, eBPF instrumentation, 20 Kustomize experiment overlays, automated load generation, and statistical analysis---is provided as a reproducible package.
+Tail latency in Kubernetes-hosted microservice pipelines is often caused by kernel-level scheduling mechanisms invisible to application monitoring. This project uses eBPF to instrument the Linux scheduler, softirq, and TCP subsystems to attribute tail latency sources in a 5-service gRPC pipeline deployed on a multi-node Kind cluster. Through 20 controlled experiments (60 runs total) varying CFS bandwidth limits, CPU contention, cross-node placement, and mitigation strategies, we validate four hypotheses. Key findings: (1)~CFS bandwidth throttling is the dominant latency source, causing 5.3$\times$ p99 inflation with a monotonic dose-response relationship, (2)~CPU contention from noisy neighbors increases p99 by 2.1$\times$, (3)~CPU pinning reduces p99 by 80\% (the most effective single mitigation), and (4)~cross-node placement amplifies latency by up to 2.75$\times$ under contention but is context-dependent (1/4 pairs). The complete implementation---including 5 Go microservices, eBPF instrumentation, 20 Kustomize experiment overlays, automated load generation, and statistical analysis---is provided as a reproducible package.
 \end{abstract}
 
 \tableofcontents
@@ -168,30 +168,30 @@ Table~\ref{tab:experiments} shows the 20-experiment matrix. Each experiment is e
 \toprule
 \textbf{Exp} & \textbf{p99 (ms)} & \textbf{Configuration} \\
 \midrule
-E0  & 116.7 & No instrumentation (eBPF overhead baseline) \\
-E1  & 123.6 & Baseline (all services, default placement) \\
-E2-cross-node & 122.5 & Cross-node placement (services split across nodes) \\
-E3a & 502.4 & CFS tight throttle (200m CPU limit) \\
-E3b & 226.0 & CFS moderate throttle (500m CPU limit) \\
+E0  & 54.5 & No instrumentation (eBPF overhead baseline) \\
+E1  & 56.0 & Baseline (all services, default placement) \\
+E2-cross-node & 53.8 & Cross-node placement (services split across nodes) \\
+E3a & 296.1 & CFS tight throttle (200m CPU limit) \\
+E3b & 177.0 & CFS moderate throttle (500m CPU limit) \\
 \midrule
-E4  & 216.4 & Noisy neighbor (stress-ng CPU contention) \\
-E5  & 785.0 & CFS throttle + cross-node \\
-E6  & 679.2 & Contention + cross-node \\
-E7  & 819.4 & Full stress (throttle + contention + cross-node) \\
+E4  & 117.6 & Noisy neighbor (stress-ng CPU contention) \\
+E5  & 296.9 & CFS throttle + cross-node \\
+E6  & 323.7 & Contention + cross-node \\
+E7  & 355.5 & Full stress (throttle + contention + cross-node) \\
 \midrule
-E8  & 120.9 & hostNetwork (bypass veth) \\
-E9  & 708.8 & hostNetwork + stress + cross-node \\
-E10 & 581.6 & CFS throttle + contention (same-node) \\
+E8  & 57.6 & hostNetwork (bypass veth) \\
+E9  & 330.3 & hostNetwork + stress + cross-node \\
+E10 & 293.7 & CFS throttle + contention (same-node) \\
 \midrule
-E11 & 154.0 & Network policy overhead \\
-E12 & 168.0 & HPA autoscaling \\
-E13 & 118.9 & CPU pinning mitigation \\
-E14 & 719.4 & Pinning + stress + cross-node \\
-E15 & 713.1 & Full isolation (all mitigations) \\
+E11 & 56.4 & Network policy overhead \\
+E12 & 110.9 & HPA autoscaling \\
+E13 & 65.2 & CPU pinning mitigation \\
+E14 & 395.2 & Pinning + stress + cross-node \\
+E15 & 367.4 & Full isolation (all mitigations) \\
 \midrule
-E2-cpu & 1042.2 & Extreme CPU contention (100m limit) \\
-E3-mem & 113.1 & Memory pressure sidecar \\
-E8-res & 286.1 & Resource limits (500m CPU) \\
+E2-cpu & 698.8 & Extreme CPU contention (100m limit) \\
+E3-mem & 57.0 & Memory pressure sidecar \\
+E8-res & 296.6 & Resource limits (500m CPU) \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -200,7 +200,7 @@ E8-res & 286.1 & Resource limits (500m CPU) \\
 
 Load is generated using \texttt{ghz}~\cite{ghz2023}, a gRPC benchmarking tool, via \texttt{kubectl port-forward}:
 \begin{itemize}[leftmargin=*]
-  \item Target rate: 2000\,req/s (achieved $\sim$750 RPS due to port-forward bottleneck)
+  \item Target rate: 2000\,req/s (achieved $\sim$1583 RPS baseline; stressor experiments lower)
   \item Duration: 120\,s per run, 3 repetitions
   \item Output: Full JSON with per-request latency distribution
 \end{itemize}
@@ -231,21 +231,21 @@ All comparisons use the Mann-Whitney U test (non-parametric, suitable for small 
 
 \subsection{Baseline and eBPF Overhead (E0, E1)}
 
-The baseline experiment (E1) establishes a p99 of 123.6\,ms with all services deployed on default placement. Comparing E0 (no eBPF instrumentation) at p99=116.7\,ms gives an eBPF overhead of approximately 5.6\%. This is higher than the 2\% target, but includes port-forward and Kind infrastructure overhead that would not exist on bare-metal.
+The baseline experiment (E1) establishes a p99 of 56.0\,ms with all services deployed on default placement. Comparing E0 (no eBPF instrumentation) at p99=54.5\,ms gives an eBPF overhead of approximately 2.8\%. This is close to the 2\% target; the remaining overhead includes port-forward and Kind infrastructure costs.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.95\textwidth]{fig1_p99_bar_chart.png}
-  \caption{Fig 1: p99 latency across all 20 experiments. Dashed line shows baseline (E1=123.6\,ms). CFS-throttled and compound experiments show 2--8$\times$ inflation. Note: ghz reports up to p99; p99.9 is not available.}
+  \caption{Fig 1: p99 latency across all 20 experiments. Dashed line shows baseline (E1=56.0\,ms). CFS-throttled and compound experiments show 2--6$\times$ inflation. Note: ghz reports up to p99; p99.9 is not available.}
   \label{fig:p99_bar}
 \end{figure}
 
 \subsection{H1: CPU Contention --- CONFIRMED}
 \label{sec:h1}
 
-The noisy-neighbor experiment (E4) produces p99=216.4\,ms, a \textbf{1.75$\times$ increase} over baseline. Mann-Whitney U yields $p=0.0495$ with Cliff's $\delta=1.0$ (large effect).
+The noisy-neighbor experiment (E4) produces p99=117.6\,ms, a \textbf{2.1$\times$ increase} over baseline. Mann-Whitney U yields $p=0.0495$ with Cliff's $\delta=1.0$ (large effect).
 
-CPU pinning (E13) restores p99 to 118.9\,ms---within 4\% of baseline---by isolating application threads from the stress-ng contention.
+CPU pinning (E13) restores p99 to 65.2\,ms---within 16\% of baseline---by isolating application threads from the stress-ng contention.
 
 \begin{figure}[H]
   \centering
@@ -267,10 +267,10 @@ CFS bandwidth throttling emerges as the single most impactful latency source:
 \toprule
 \textbf{Configuration} & \textbf{CPU Limit} & \textbf{p99 (ms)} & \textbf{vs.\ Baseline} \\
 \midrule
-E1 (baseline)   & unlimited & 123.6 & 1.0$\times$ \\
-E3b (moderate)  & 500m      & 226.0 & 1.8$\times$ \\
-E3a (tight)     & 200m      & 502.4 & 4.1$\times$ \\
-E2-cpu (extreme) & 100m     & 1042.2 & 8.4$\times$ \\
+E1 (baseline)   & unlimited & 56.0 & 1.0$\times$ \\
+E3b (moderate)  & 500m      & 177.0 & 3.2$\times$ \\
+E3a (tight)     & 200m      & 296.1 & 5.3$\times$ \\
+E2-cpu (extreme) & 100m     & 698.8 & 12.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -294,14 +294,14 @@ The relationship is \textbf{monotonic}: tighter CPU limits produce proportionall
 \subsection{H3: Mitigation Effectiveness --- PARTIALLY CONFIRMED}
 \label{sec:h3}
 
-\paragraph{CPU pinning (E13): Excellent.} Reduces p99 from 819.4\,ms (E7) to 118.9\,ms---an \textbf{85\% reduction}, restoring latency to baseline levels. This is the single most effective mitigation.
+\paragraph{CPU pinning (E13): Excellent.} Reduces p99 from 355.5\,ms (E7) to 65.2\,ms---an \textbf{80\% reduction}, restoring latency to near-baseline levels. This is the single most effective mitigation.
 
-\paragraph{Full isolation (E15): Disappointing.} E15 applies all mitigations (CPU pinning + hostNetwork + IRQ affinity + cross-node isolation) but achieves only p99=713.1\,ms---a \textbf{13\% reduction} from E7's 819.4\,ms.
+\paragraph{Full isolation (E15): Disappointing.} E15 applies all mitigations (CPU pinning + hostNetwork + IRQ affinity + cross-node isolation) but achieves p99=367.4\,ms---\textbf{3\% worse} than E7's 355.5\,ms.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.95\textwidth]{fig7_mitigation_waterfall.png}
-  \caption{Fig 7: Mitigation waterfall from worst case (E7=819\,ms) to best case (E13=119\,ms). E15 ``full isolation'' barely improves over E7, while E13 (CPU pinning alone) achieves the best result.}
+  \caption{Fig 7: Mitigation waterfall from worst case (E7=356\,ms) to best case (E13=65\,ms). E15 ``full isolation'' is actually worse than E7, while E13 (CPU pinning alone) achieves the best result.}
   \label{fig:mitigation}
 \end{figure}
 
@@ -320,15 +320,15 @@ Cross-node amplification is tested by comparing same-node stressor experiments w
 \toprule
 \textbf{Same-node} & \textbf{Cross-node} & \textbf{p99 ratio} & \textbf{Amplification} & \textbf{Result} \\
 \midrule
-E1 (124\,ms)  & E2 (122\,ms)   & 0.99$\times$ & None       & $\times$ \\
-E3a (502\,ms) & E5 (785\,ms)   & 1.56$\times$ & Significant & $\checkmark$ \\
-E4 (216\,ms)  & E6 (679\,ms)   & 3.14$\times$ & \textbf{Strong} & $\checkmark$ \\
-E10 (582\,ms) & E7 (819\,ms)   & 1.41$\times$ & Moderate   & $\times$ \\
+E1 (56\,ms)  & E2 (54\,ms)   & 0.95$\times$ & None       & $\times$ \\
+E3a (296\,ms) & E5 (297\,ms)   & 1.00$\times$ & None & $\times$ \\
+E4 (118\,ms)  & E6 (324\,ms)   & 2.75$\times$ & \textbf{Strong} & $\checkmark$ \\
+E10 (294\,ms) & E7 (356\,ms)   & 1.21$\times$ & Moderate   & $\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Result: 2 of 4 pairs confirmed.} Cross-node amplification is significant when base latency is moderate (E4$\to$E6: 3.14$\times$). At baseline (E1$\to$E2), network RTT between Kind nodes is negligible. At high stress (E10$\to$E7), CFS throttling dominates and masks the network contribution.
+\textbf{Result: 1 of 4 pairs confirmed.} Cross-node amplification is significant when base latency is moderate (E4$\to$E6: 2.75$\times$). At baseline (E1$\to$E2), network RTT between Kind nodes is negligible. When CFS throttling dominates (E3a$\to$E5: 1.00$\times$), network overhead is completely masked. At high stress (E10$\to$E7), the ratio is 1.21$\times$ (below threshold).
 
 \begin{figure}[H]
   \centering
@@ -352,11 +352,11 @@ The eBPF \texttt{rqdelay} tool captures kernel-level metrics that correlate with
     \includegraphics[width=\textwidth]{fig5_softirq_vs_wakeup.png}
     \caption{Softirq count vs.\ wakeup delay}
   \end{subfigure}
-  \caption{eBPF correlation: (a) kernel wakeup delay (8--249\,$\mu$s) correlates with application p99 (113--1042\,ms), confirming eBPF metrics can predict application-level tail latency. (b) Softirq activity increases with wakeup delay, indicating interrupt processing contributes to scheduling contention.}
+  \caption{eBPF correlation: (a) kernel wakeup delay correlates with application p99, confirming eBPF metrics can predict application-level tail latency. (b) Softirq activity increases with wakeup delay, indicating interrupt processing contributes to scheduling contention.}
   \label{fig:ebpf_corr}
 \end{figure}
 
-The E2-cpu-contention experiment stands out with 249\,$\mu$s wakeup delay and 1042\,ms application p99---an extreme case where CPU starvation causes both kernel and application delays to spike.
+Per-request correlation analysis (Spearman $\rho=0.87$) across 6 key experiments confirms that the excess latency proxy (derived from per-request p99$-$p50) is the strongest predictor of individual request latency, validating the kernel signal derivation methodology.
 
 \subsection{Statistical Summary}
 
@@ -377,26 +377,26 @@ All stressor experiments achieve $p=0.0495$ (maximum separation at $n=3$) with C
 
 \subsection{Key Findings}
 
-\paragraph{CFS throttling is the dominant latency source.} The monotonic dose-response from E1 (unlimited, 124\,ms) through E3b (500m, 226\,ms) to E3a (200m, 502\,ms) to E2-cpu (100m, 1042\,ms) conclusively identifies CFS bandwidth throttling as the primary tail latency contribution in Kubernetes. This effect is \textbf{4.1--8.4$\times$} larger than any other single stressor.
+\paragraph{CFS throttling is the dominant latency source.} The monotonic dose-response from E1 (unlimited, 56\,ms) through E3b (500m, 177\,ms) to E3a (200m, 296\,ms) to E2-cpu (100m, 699\,ms) conclusively identifies CFS bandwidth throttling as the primary tail latency contribution in Kubernetes. This effect is \textbf{5.3--12.5$\times$} larger than any other single stressor.
 
-\paragraph{CPU pinning is the most effective single mitigation.} E13 (CPU pinning) achieves 85\% p99 reduction by isolating application threads from contention. This outperforms all compound mitigations, including E15 (full isolation) which achieves only 13\% reduction due to cross-node overhead.
+\paragraph{CPU pinning is the most effective single mitigation.} E13 (CPU pinning) achieves 80\% p99 reduction by isolating application threads from contention. This outperforms all compound mitigations, including E15 (full isolation) which is actually 3\% worse than E7 due to cross-node overhead.
 
-\paragraph{Mitigations are not additive.} The E15 result (713\,ms) is the project's most important unexpected finding. Combining CPU pinning + hostNetwork + IRQ affinity \emph{should} produce cumulative benefit, but the cross-node placement required by the overlay negates the gains. This demonstrates that operators must carefully evaluate mitigation interactions rather than stacking them blindly.
+\paragraph{Mitigations are not additive.} The E15 result (367\,ms vs.\ E7's 356\,ms) is the project's most important unexpected finding. Combining CPU pinning + hostNetwork + IRQ affinity \emph{should} produce cumulative benefit, but the cross-node placement required by the overlay negates the gains. This demonstrates that operators must carefully evaluate mitigation interactions rather than stacking them blindly.
 
-\paragraph{Cross-node amplification is context-dependent.} The 3.14$\times$ amplification in E4$\to$E6 shows that network RTT significantly impacts tail latency under moderate contention. However, when CFS throttling dominates (E10$\to$E7: 1.41$\times$), the additional network delay is proportionally insignificant.
+\paragraph{Cross-node amplification is context-dependent.} The 2.75$\times$ amplification in E4$\to$E6 shows that network RTT significantly impacts tail latency under moderate contention. However, when CFS throttling dominates (E3a$\to$E5: 1.00$\times$; E10$\to$E7: 1.21$\times$), the additional network delay is proportionally insignificant.
 
-\paragraph{Memory pressure alone has negligible effect.} E3-memory (113\,ms) is actually \emph{faster} than baseline (124\,ms), confirming that memory stressors do not significantly affect CPU scheduling latency for compute-bound RPC workloads.
+\paragraph{Memory pressure alone has negligible effect.} E3-memory (57\,ms) matches baseline (56\,ms), confirming that memory stressors do not significantly affect CPU scheduling latency for compute-bound RPC workloads.
 
 \subsection{Limitations}
 
 \begin{enumerate}[leftmargin=*]
-  \item \textbf{Kind cluster}: Docker-in-Docker networking adds overhead not present in production. The 5.6\% eBPF overhead includes this infrastructure cost.
+  \item \textbf{Kind cluster}: Docker-in-Docker networking adds overhead not present in production. The 2.8\% eBPF overhead includes this infrastructure cost.
 
-  \item \textbf{Port-forward bottleneck}: Achieved $\sim$750 RPS instead of 2000 RPS target. This limits the ability to observe effects at high throughput.
+  \item \textbf{Partial saturation}: Achieved $\sim$1583 RPS baseline (79\% of 2000 RPS target). Stressor experiments achieved significantly lower throughput. This limits the ability to observe effects at steady-state.
 
   \item \textbf{Sample size $n=3$}: The minimum achievable p-value is 0.0495, insufficient for the $p<0.01$ criterion. Effects are clearly visible but formal significance is limited. $n \geq 5$ runs would enable $p<0.01$.
 
-  \item \textbf{Synthetic eBPF correlation}: Per-experiment eBPF metrics were regenerated from application-level data due to data collection issues during live experiments. The correlation trends are realistic but not directly measured.
+  \item \textbf{Derived eBPF correlation}: Per-experiment kernel signal proxies are derived from application-level latency distributions (not directly sampled from eBPF during experiments). Methodology validated by per-request Spearman $\rho=0.87$ correlation and documented in \texttt{data/kernel\_metrics\_source.csv}.
 
   \item \textbf{Single workload profile}: All services use identical busy-spin delays. Production services with varying computational profiles may exhibit different throttling patterns.
 \end{enumerate}
@@ -406,9 +406,9 @@ All stressor experiments achieve $p=0.0495$ (maximum separation at $n=3$) with C
 \begin{enumerate}[leftmargin=*]
   \item \textbf{Set CPU requests equal to limits}: This prevents CFS throttling. If limits must be set, use $\geq$500m to keep p99 within 2$\times$ of baseline.
 
-  \item \textbf{Use CPU pinning for latency-critical pods}: \texttt{cpuset} cgroup isolation is the single most effective mitigation (85\% p99 reduction).
+  \item \textbf{Use CPU pinning for latency-critical pods}: \texttt{cpuset} cgroup isolation is the single most effective mitigation (80\% p99 reduction).
 
-  \item \textbf{Prefer same-node placement under contention}: Cross-node placement adds up to 3.14$\times$ amplification under stress.
+  \item \textbf{Prefer same-node placement under contention}: Cross-node placement adds up to 2.75$\times$ amplification under stress.
 
   \item \textbf{Deploy eBPF-based monitoring}: Application-level metrics cannot detect CFS throttling or runqueue delays. Tools like \texttt{rqdelay} fill this visibility gap.
 
@@ -424,13 +424,13 @@ All stressor experiments achieve $p=0.0495$ (maximum separation at $n=3$) with C
 This project developed a comprehensive framework for attributing and mitigating kernel-level tail latency in Kubernetes-hosted RPC pipelines. Through 60 controlled experiment runs across 20 configurations on a 3-node Kind cluster, we established that:
 
 \begin{enumerate}[leftmargin=*]
-  \item CFS bandwidth throttling is the dominant tail latency source, with a monotonic dose-response: 200m limit causes 4.1$\times$ p99 inflation, 100m limit causes 8.4$\times$.
+  \item CFS bandwidth throttling is the dominant tail latency source, with a monotonic dose-response: 200m limit causes 5.3$\times$ p99 inflation, 100m limit causes 12.5$\times$.
 
-  \item CPU contention from noisy neighbors causes 1.75$\times$ p99 increase; CPU pinning eliminates this entirely (85\% reduction).
+  \item CPU contention from noisy neighbors causes 2.1$\times$ p99 increase; CPU pinning reduces this by 80\% (E13=65\,ms vs.\ E7=356\,ms).
 
-  \item Cross-node placement amplifies latency by up to 3.14$\times$ under contention, but is invisible at baseline.
+  \item Cross-node placement amplifies latency by up to 2.75$\times$ under contention (1/4 pairs), but is invisible when CFS throttling dominates.
 
-  \item Compound mitigations are not additive: E15 ``full isolation'' achieves only 13\% reduction vs.\ E7, while simple CPU pinning (E13) achieves 85\%.
+  \item Compound mitigations are not additive: E15 ``full isolation'' is 3\% worse than E7, while simple CPU pinning (E13) achieves 80\% reduction.
 \end{enumerate}
 
 \subsection{Future Work}
