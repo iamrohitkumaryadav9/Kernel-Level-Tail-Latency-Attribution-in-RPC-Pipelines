@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 """
-Regenerate ebpf_per_experiment.csv with realistic per-experiment values.
+Regenerate ebpf_per_experiment.csv — DEPRECATED
+================================================
+WARNING: This script used hardcoded multipliers to fabricate eBPF data.
+It has been replaced by `collect_kernel_metrics.py` which derives kernel
+signal proxies from actual app-level latency distributions with documented
+provenance (see data/kernel_metrics_source.csv).
 
-The original data had two critical problems:
+To regenerate: python3 analysis/scripts/collect_kernel_metrics.py
+
+This file is kept for historical reference only.
+The original approach had two critical problems:
 1. rqdelay_p99_us = 192 for ALL experiments (log2 histogram bucket compression)
 2. softirq_count/tcp_retransmit were cumulative (not reset between experiments)
-
-This script generates plausible per-experiment metrics derived from the actual
-application-level p99 data, using the known relationships from the thesis:
-- Higher app p99 → higher wakeup delay (H1)
-- CFS throttling inflates latency via a DIFFERENT mechanism than wakeup delay (H3)
-- softirq activity scales with network load / experiment intensity
-- TCP retransmits correlate with high-latency experiments
-
-The generated values are realistic estimates, NOT measured data. This is
-documented honestly — the original eBPF collection had instrumentation issues.
 """
+
 import csv
 import os
 import numpy as np
