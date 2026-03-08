@@ -150,7 +150,8 @@ Expected output: 6 images (gateway, auth, risk, marketdata, execution, rqdelay).
 ```bash
 kind create cluster --name latency-attribution --config deploy/kind-multinode.yaml
 ```
-
+<!-- if exists then delete it : kind delete cluster --name latency-attribution
+ -->
 If `kind-multinode.yaml` doesn't exist, create it:
 
 ```yaml
